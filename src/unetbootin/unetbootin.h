@@ -395,7 +395,6 @@ public:
     bool preinstallationCheckUSB(const QString &targetDrive, void *pUDisk);
     int checkSecureBoot();
     int checkBitLocker(const QString &drive);
-    int updateBootManager(const QString &bmPath);
     QString getEfiTool();
     QString getEfiFile(const QString &baseDir);
     bool createDataImage();
