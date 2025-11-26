@@ -1,15 +1,36 @@
 # Building WinuX
 
+## Quick Build (Recommended)
+
+The easiest way to build WinuX is using the provided build script:
+
+```bash
+chmod +x test-build.sh
+./test-build.sh
+```
+
+This script will automatically:
+- Install Qt5 development tools
+- Generate translation files
+- Generate UI headers
+- Build the project
+
 ## Build in GitHub Codespaces (Interactive)
 
 1. Go to your repo `ogamalx/WinuX` → Code → Codespaces → Create codespace
 2. When VS Code opens in the browser, open a terminal
-3. Install Qt development tools:
+3. Run the build script:
+   ```bash
+   ./test-build.sh
+   ```
+
+Alternatively, you can build manually:
+1. Install Qt development tools:
    ```bash
    sudo apt update
-   sudo apt install -y qtbase5-dev qtchooser qt5-qmake qtbase5-dev-tools
+   sudo apt install -y qtbase5-dev qtchooser qt5-qmake qtbase5-dev-tools qttools5-dev-tools
    ```
-4. Navigate to the source directory and build:
+2. Navigate to the source directory and build:
    ```bash
    cd src/unetbootin
    qmake unetbootin.pro
