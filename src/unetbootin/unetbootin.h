@@ -335,12 +335,12 @@ public:
 	int getPartitionNumber(QString devicenode);
 	#endif
 	#ifdef Q_OS_WIN32
-        void installsvzip();
-        void configsysEdit();
-        void bootiniEdit();
-    void copyBootIni(QString target, QString source);
-    int getBootMode();
-        #endif
+	void installsvzip();
+	void configsysEdit();
+	void bootiniEdit();
+	void copyBootIni(QString target, QString source);
+	int getBootMode();
+	#endif
 	void instIndvfl(QString srcfName, QString dstfName);
 	QString instTempfl(QString srcfName, QString dstfType);
 	void runinst();
