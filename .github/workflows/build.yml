@@ -1,0 +1,22 @@
+name: Build WinuX
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  linux-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Qt
+        run: |
+          sudo apt update
+          sudo apt install -y qtbase5-dev qtchooser qt5-qmake qtbase5-dev-tools
+
+      - name: Build
+        working-directory: src/unetbootin
+        run: |
+          qmake unetbootin.pro
+          make -j"$(nproc)"
