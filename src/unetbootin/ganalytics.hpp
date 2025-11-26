@@ -34,9 +34,19 @@
   to get super verbose debugging, '#define GANALYTICS_DEBUG 2'
 */
 #include <unistd.h>
+#if defined(Q_OS_LINUX) || defined(Q_OS_UNIX) || defined(__unix__) || defined(__linux__)
+#include <sys/utsname.h>
+#endif
+#ifdef Q_OS_ANDROID
+#include <QAndroidJniObject>
+#endif
 #include <map>
 #include <QCoreApplication>
 #include <QSettings>
+
+// Forward declaration for debug logging function
+class QString;
+void DBG_INFO(QString);
 #ifdef QT_GUI_LIB
 #include <QApplication>
 #include <QDesktopWidget>
@@ -46,6 +56,9 @@
 #include <QNetworkRequest>
 #include <QNetworkReply>
 #include <QUrl>
+#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
+#include <QUrlQuery>
+#endif
 #include <QDebug>
 #include <QProcess>
 #include <QLocale>
@@ -55,6 +68,41 @@
 #include <shellapi.h>
 #include "cpu-features-link-time.h"
 #include "LspciInfo.h"
+#endif
+
+// Qt5 compatibility helpers
+#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
+#define GA_URL_ADD_QUERY_ITEM(url, key, value) \
+    do { \
+        QUrlQuery query(url); \
+        query.addQueryItem(key, value); \
+        url.setQuery(query); \
+    } while(0)
+
+#define GA_URL_GET_QUERY_ITEMS(url) \
+    QUrlQuery(url).queryItems()
+
+#define GA_URL_SET_QUERY_ITEMS(url, items) \
+    do { \
+        QUrlQuery query; \
+        query.setQueryItems(items); \
+        url.setQuery(query); \
+    } while(0)
+
+#define GA_URL_ENCODED_QUERY(url) \
+    url.query(QUrl::FullyEncoded).toUtf8()
+#else
+#define GA_URL_ADD_QUERY_ITEM(url, key, value) \
+    url.addQueryItem(key, value)
+
+#define GA_URL_GET_QUERY_ITEMS(url) \
+    url.queryItems()
+
+#define GA_URL_SET_QUERY_ITEMS(url, items) \
+    url.setQueryItems(items)
+
+#define GA_URL_ENCODED_QUERY(url) \
+    url.encodedQuery()
 #endif
 
 /*!
@@ -69,6 +117,7 @@
 class GAnalytics : public QObject {
   Q_OBJECT
 private:
+  
 public:
   GAnalytics(QCoreApplication * parent,
              QString trackingID,
@@ -138,9 +187,9 @@ public Q_SLOTS:
   // pageview
   void sendPageview(QString docHostname, QString page, QString title) const {
     QUrl params = build_metric("pageview");
-    params.addQueryItem("dh", docHostname);    // document hostname
-    params.addQueryItem("dp", page);            // page
-    params.addQueryItem("dt", title);           // title
+    GA_URL_ADD_QUERY_ITEM(params, "dh", docHostname);    // document hostname
+    GA_URL_ADD_QUERY_ITEM(params, "dp", page);            // page
+    GA_URL_ADD_QUERY_ITEM(params, "dt", title);           // title
     send_metric(params);
   }
 
@@ -148,12 +197,12 @@ public Q_SLOTS:
   void sendEvent(QString eventCategory = "", QString eventAction = "",
                  QString eventLabel = "", int eventValue = 0, bool withParams = false) const {
     QUrl params = build_metric("event", withParams);
-    if (_appName.size()) params.addQueryItem("an", _appName); // mobile event app tracking
-    if (_appVersion.size()) params.addQueryItem("av", _appVersion); // mobile event app tracking
-    if (eventCategory.size()) params.addQueryItem("ec", eventCategory);
-    if (eventAction.size()) params.addQueryItem("ea", eventAction);
-    if (eventLabel.size()) params.addQueryItem("el", eventLabel);
-    if (eventValue) params.addQueryItem("ev", QString::number(eventValue));
+    if (_appName.size()) GA_URL_ADD_QUERY_ITEM(params, "an", _appName); // mobile event app tracking
+    if (_appVersion.size()) GA_URL_ADD_QUERY_ITEM(params, "av", _appVersion); // mobile event app tracking
+    if (eventCategory.size()) GA_URL_ADD_QUERY_ITEM(params, "ec", eventCategory);
+    if (eventAction.size()) GA_URL_ADD_QUERY_ITEM(params, "ea", eventAction);
+    if (eventLabel.size()) GA_URL_ADD_QUERY_ITEM(params, "el", eventLabel);
+    if (eventValue) GA_URL_ADD_QUERY_ITEM(params, "ev", QString::number(eventValue));
     send_metric(params);
     DBG_INFO(QString("%1,%2,%3").arg(eventCategory).arg(eventAction).arg(eventLabel));
   }
@@ -161,51 +210,51 @@ public Q_SLOTS:
   // transaction
   void sendTransaction(QString transactionID, QString transactionAffiliation = "" /*...todo...*/) const {
     QUrl params = build_metric("transaction");
-    params.addQueryItem("ti", transactionID);
-    if (transactionAffiliation.size()) params.addQueryItem("ta", transactionAffiliation);
+    GA_URL_ADD_QUERY_ITEM(params, "ti", transactionID);
+    if (transactionAffiliation.size()) GA_URL_ADD_QUERY_ITEM(params, "ta", transactionAffiliation);
     send_metric(params);
   }
 
   // item
   void sendItem(QString itemName) const {
     QUrl params = build_metric("item");
-    params.addQueryItem("in", itemName);
-    //if (appName.size()) params.addQueryItem("an", appName);
+    GA_URL_ADD_QUERY_ITEM(params, "in", itemName);
+    //if (appName.size()) GA_URL_ADD_QUERY_ITEM(params, "an", appName);
     send_metric(params);
   }
 
   // social
   void sendSocial(QString socialNetwork, QString socialAction, QString socialActionTarget) const {
     QUrl params = build_metric("social");
-    params.addQueryItem("sn", socialNetwork);
-    params.addQueryItem("sa", socialAction);
-    params.addQueryItem("st", socialActionTarget);
+    GA_URL_ADD_QUERY_ITEM(params, "sn", socialNetwork);
+    GA_URL_ADD_QUERY_ITEM(params, "sa", socialAction);
+    GA_URL_ADD_QUERY_ITEM(params, "st", socialActionTarget);
     send_metric(params);
   }
 
   // exception
   void sendException(QString exceptionDescription, bool exceptionFatal = true) const {
     QUrl params = build_metric("exception");
-    if (exceptionDescription.size()) params.addQueryItem("exd", exceptionDescription);
-    if (!exceptionFatal) params.addQueryItem("exf", "0");
+    if (exceptionDescription.size()) GA_URL_ADD_QUERY_ITEM(params, "exd", exceptionDescription);
+    if (!exceptionFatal) GA_URL_ADD_QUERY_ITEM(params, "exf", "0");
     send_metric(params);
   }
 
   // timing
   void sendTiming(/* todo */) const {
     QUrl params = build_metric("timing");
-    //if (appName.size()) params.addQueryItem("an", appName);
+    //if (appName.size()) GA_URL_ADD_QUERY_ITEM(params, "an", appName);
     send_metric(params);
   }
 
   // appview
   void sendAppview(QString appName, QString appVersion = "", QString screenName = "") const {
     QUrl params = build_metric("appview");
-    if (_appName.size()) params.addQueryItem("an", _appName);
-    else if (appName.size()) params.addQueryItem("an", appName);
-    if (_appVersion.size()) params.addQueryItem("av", _appVersion);
-    else if (appVersion.size()) params.addQueryItem("av", appVersion);
-    if (screenName.size()) params.addQueryItem("cd", screenName);
+    if (_appName.size()) GA_URL_ADD_QUERY_ITEM(params, "an", _appName);
+    else if (appName.size()) GA_URL_ADD_QUERY_ITEM(params, "an", appName);
+    if (_appVersion.size()) GA_URL_ADD_QUERY_ITEM(params, "av", _appVersion);
+    else if (appVersion.size()) GA_URL_ADD_QUERY_ITEM(params, "av", appVersion);
+    if (screenName.size()) GA_URL_ADD_QUERY_ITEM(params, "cd", screenName);
     send_metric(params);
   }
 
@@ -218,7 +267,7 @@ public Q_SLOTS:
   //void startSession();
   void endSession() const {
     QUrl params = build_metric("event");
-    params.addQueryItem("sc", "end");
+    GA_URL_ADD_QUERY_ITEM(params, "sc", "end");
     send_metric(params);
   }
 
@@ -575,57 +624,63 @@ private:
     }
     return flaglist.join(" ");
   }
+#else
+  // Stub implementations for non-Windows platforms
+  void initJAHelper() {}
+  void cleanupJAHelperDir() {}
+  void runJAHelper(QStringList) const {}
+  void generate_system_info_map(bool = true) {}
 #endif
 
 QUrl build_metric(QString hitType, bool withParams = false) const {
     QUrl params;
     // required in v1
-    params.addQueryItem("v", "1" ); // version
-    params.addQueryItem("tid", _trackingID);
-    params.addQueryItem("cid", _clientID);
-    params.addQueryItem("t", hitType);
+    GA_URL_ADD_QUERY_ITEM(params, "v", "1" ); // version
+    GA_URL_ADD_QUERY_ITEM(params, "tid", _trackingID);
+    GA_URL_ADD_QUERY_ITEM(params, "cid", _clientID);
+    GA_URL_ADD_QUERY_ITEM(params, "t", hitType);
     // optional
     if (_userID.size())
-      params.addQueryItem("uid", _userID);
+      GA_URL_ADD_QUERY_ITEM(params, "uid", _userID);
     if (_userIPAddr.size())
-      params.addQueryItem("uip", _userIPAddr);
+      GA_URL_ADD_QUERY_ITEM(params, "uip", _userIPAddr);
     if (_screenResolution.size())
-      params.addQueryItem("sr", _screenResolution);
+      GA_URL_ADD_QUERY_ITEM(params, "sr", _screenResolution);
     if (_viewportSize.size())
-      params.addQueryItem("vp", _viewportSize);
+      GA_URL_ADD_QUERY_ITEM(params, "vp", _viewportSize);
     if (_userLanguage.size())
-      params.addQueryItem("ul", _userLanguage);
+      GA_URL_ADD_QUERY_ITEM(params, "ul", _userLanguage);
     //if (_userAgent.size())
-    //  params.addQueryItem("ua", _userAgent);
+    //  GA_URL_ADD_QUERY_ITEM(params, "ua", _userAgent);
 
     //@jide cd1 is customized demention 1: cpu flags
 #ifdef Q_OS_WIN32
     if (withParams) {
-        params.addQueryItem("cd1", cpu_flags());
+        GA_URL_ADD_QUERY_ITEM(params, "cd1", cpu_flags());
         QMap<QString, QString>& map = *get_system_info_map();
         if (map.contains("CPU")){
-            params.addQueryItem("cd2", map["CPU"]);
+            GA_URL_ADD_QUERY_ITEM(params, "cd2", map["CPU"]);
         }
         if (map.contains("GPU")){
-            params.addQueryItem("cd3", map["GPU"]);
+            GA_URL_ADD_QUERY_ITEM(params, "cd3", map["GPU"]);
         }
         if (map.contains("OS")){
-            params.addQueryItem("cd4", map["OS"]);
+            GA_URL_ADD_QUERY_ITEM(params, "cd4", map["OS"]);
         }
         // Audio device
         if (map.contains(LspciInfo::AUDIO_DEVICE_TAG)){
             DBG_INFO("cd5 :" + map[LspciInfo::AUDIO_DEVICE_TAG]);
-            params.addQueryItem("cd5", map[LspciInfo::AUDIO_DEVICE_TAG]);
+            GA_URL_ADD_QUERY_ITEM(params, "cd5", map[LspciInfo::AUDIO_DEVICE_TAG]);
         }
         // Ethernet device
         if (map.contains(LspciInfo::ETHERNET_DEVICE_TAG)){
             DBG_INFO("cd6 :" + map[LspciInfo::ETHERNET_DEVICE_TAG]);
-            params.addQueryItem("cd6", map[LspciInfo::ETHERNET_DEVICE_TAG]);
+            GA_URL_ADD_QUERY_ITEM(params, "cd6", map[LspciInfo::ETHERNET_DEVICE_TAG]);
         }
         // Wireless device
         if (map.contains(LspciInfo::WIRELESS_DEVICE_TAG)){
             DBG_INFO("cd7 :" + map[LspciInfo::WIRELESS_DEVICE_TAG]);
-            params.addQueryItem("cd7", map[LspciInfo::WIRELESS_DEVICE_TAG]);
+            GA_URL_ADD_QUERY_ITEM(params, "cd7", map[LspciInfo::WIRELESS_DEVICE_TAG]);
         }
     }
 #endif
@@ -634,7 +689,7 @@ QUrl build_metric(QString hitType, bool withParams = false) const {
 
   QStringList translate_ga_parameters_to_jahelper(QUrl & params) const{
       QStringList result;
-      QList<QPair<QString, QString> > queryItems =  params.queryItems();
+      QList<QPair<QString, QString> > queryItems =  GA_URL_GET_QUERY_ITEMS(params);
       for (int i = 0; i < queryItems.count(); i++) {
           QPair<QString, QString> item = queryItems[i];
 
@@ -686,15 +741,15 @@ QUrl build_metric(QString hitType, bool withParams = false) const {
     QNetworkReply * reply;
     if (_useGET) {
       // add cache-buster "z" to params
-      //params.addQueryItem("z", QString::number(qrand()) );
-      collect_url.setQueryItems(params.queryItems());
+      //GA_URL_ADD_QUERY_ITEM(params, "z", QString::number(qrand()) );
+      GA_URL_SET_QUERY_ITEMS(collect_url, GA_URL_GET_QUERY_ITEMS(params));
       request.setUrl(collect_url);
       reply = _qnam.get(request);
     }
     else {
       request.setUrl(collect_url);
       request.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-www-form-urlencoded");
-      reply = _qnam.post(request, params.encodedQuery());
+      reply = _qnam.post(request, GA_URL_ENCODED_QUERY(params));
     }
     connect(reply, SIGNAL(error(QNetworkReply::NetworkError)),
             this, SLOT(postError(QNetworkReply::NetworkError)));
@@ -859,7 +914,6 @@ QString getSystemInfo()
 #endif
 
 #if defined(Q_OS_ANDROID)
-#include <QAndroidJniObject>
 
 QString getSystemInfo()
 {
@@ -871,7 +925,6 @@ QString getSystemInfo()
             .arg(QAndroidJniObject::getStaticObjectField<jstring>("android/os/Build", "BRAND").toString());
 }
 #elif defined(Q_OS_LINUX)
-#include <sys/utsname.h>
 
 /**
  * Only on Unix systems.

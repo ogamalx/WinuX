@@ -7,8 +7,10 @@ src/unetbootin/debug
 src/unetbootin/release
 src/unetbootin/qdevelop-settings.db
 src/unetbootin/main.o
-src/unetbootin/moc_unetbootin.cpp
-src/unetbootin/moc_unetbootin.o
+src/unetbootin/moc_*.cpp
+src/unetbootin/moc_*.o
+src/unetbootin/moc_predefs.h
+src/unetbootin/.qmake.stash
 src/unetbootin/README.TXT
 src/unetbootin/unetbootin
 src/unetbootin/unetbootin.exe

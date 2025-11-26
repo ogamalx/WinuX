@@ -85,7 +85,7 @@ void DBG_INFO(QString str) {
     QString logPath = QString("%1\\remixos_install.log").arg(QDir::rootPath());
 	QFile logfile(logPath);
 	logfile.open(QIODevice::Append);
-    logfile.write(str.toAscii());
+    logfile.write(str.toLatin1());
     logfile.write("\r\n");
     logfile.close();
 }
@@ -128,7 +128,7 @@ void callexternappWriteToStdinT::run()
 {
 	QProcess lnexternapp;
     lnexternapp.start("\"" + execFile + "\" " + execParm);
-	lnexternapp.write(writeToStdin.toAscii().data());
+	lnexternapp.write(writeToStdin.toLatin1().data());
 	lnexternapp.closeWriteChannel();
 	lnexternapp.waitForFinished(-1);
 	retnValu = QString(lnexternapp.readAll());
@@ -540,7 +540,7 @@ bool unetbootin::ubninitialize(QList<QPair<QString, QString> > oppairs)
 			{
 				for (int i = 1; i < this->distroselect->count(); ++i)
 				{
-					printf("%s\n", this->distroselect->itemText(i).toAscii().constData());
+					printf("%s\n", this->distroselect->itemText(i).toLatin1().constData());
 				}
 				QApplication::exit();
 				exit(0);
@@ -549,7 +549,7 @@ bool unetbootin::ubninitialize(QList<QPair<QString, QString> > oppairs)
 			{
 				for (int i = 0; i < this->dverselect->count(); ++i)
 				{
-					printf("%s\n", this->dverselect->itemText(i).toAscii().constData());
+					printf("%s\n", this->dverselect->itemText(i).toLatin1().constData());
 				}
 				QApplication::exit();
 				exit(0);
@@ -1296,7 +1296,7 @@ bool unetbootin::checkifoutofspace(QString destindir)
 	bool outofspace = false;
 	#ifdef Q_OS_UNIX
 	struct statfs diskstatS;
-	if (!statfs(QString(destindir+"/.").toAscii(), &diskstatS))
+	if (!statfs(QString(destindir+"/.").toLatin1(), &diskstatS))
 	{
 		if (diskstatS.f_bavail * diskstatS.f_bfree < 1024)
 			outofspace = true;
@@ -1306,7 +1306,7 @@ bool unetbootin::checkifoutofspace(QString destindir)
 	ULARGE_INTEGER FreeBytesAvailable;
 	ULARGE_INTEGER TotalNumberOfBytes;
 	ULARGE_INTEGER TotalNumberOfFreeBytes;
-	if (GetDiskFreeSpaceExA(destindir.toAscii(), &FreeBytesAvailable, &TotalNumberOfBytes, &TotalNumberOfFreeBytes))
+	if (GetDiskFreeSpaceExA(destindir.toLatin1(), &FreeBytesAvailable, &TotalNumberOfBytes, &TotalNumberOfFreeBytes))
 	{
 		if (FreeBytesAvailable.QuadPart < 1024)
 			outofspace = true;
@@ -3449,11 +3449,11 @@ int unetbootin::letterToNumber(QChar lettertoconvert)
 {
 	if (lettertoconvert.isLower())
 	{
-		return static_cast<int>(lettertoconvert.toAscii() - 'a');
+		return static_cast<int>(lettertoconvert.toLatin1() - 'a');
 	}
 	if (lettertoconvert.isUpper())
 	{
-		return static_cast<int>(lettertoconvert.toAscii() - 'A');
+		return static_cast<int>(lettertoconvert.toLatin1() - 'A');
 	}
 	else
 	{
@@ -3508,7 +3508,7 @@ void unetbootin::installsvzip()
 
 void unetbootin::configsysEdit()
 {
-	SetFileAttributesA(QDir::toNativeSeparators(QString("%1config.sys").arg(targetDrive)).toAscii(), FILE_ATTRIBUTE_NORMAL);
+	SetFileAttributesA(QDir::toNativeSeparators(QString("%1config.sys").arg(targetDrive)).toLatin1(), FILE_ATTRIBUTE_NORMAL);
 	QFile::copy(QDir::toNativeSeparators(QString("%1config.sys").arg(targetDrive)), QString("%1config.sys").arg(targetPath));
 	QFile::copy(QDir::toNativeSeparators(QString("%1config.sys").arg(targetDrive)), QString("%1confignw.txt").arg(targetPath));
 	QFile confignwFile(QString("%1confignw.txt").arg(targetPath));
@@ -4516,6 +4516,7 @@ void unetbootin::fininstall()
 	}
 }
 
+#ifdef Q_OS_WIN32
 void configsysUndo(QString uninstPathL)
 {
 	if (!QFile::copy(QDir::toNativeSeparators(QString("%1%2/config.sys").arg(uninstPathL).arg(REMIXOS_HDD_INSTALL_DIR)), QDir::toNativeSeparators(QString("%1config.sys").arg(uninstPathL))))
@@ -4535,6 +4536,7 @@ void bootiniUndo(QString uninstPathL, QString systemDrive)
 		}
     SetFileAttributesW(LPWSTR(QDir::toNativeSeparators(QString("%1boot.ini").arg(systemDrive)).utf16()), FILE_ATTRIBUTE_READONLY | FILE_ATTRIBUTE_SYSTEM | FILE_ATTRIBUTE_HIDDEN | FILE_ATTRIBUTE_ARCHIVE);
 }
+#endif
 
 bool removeDir(const QString &dirName) {
 #ifdef Q_OS_WIN32
@@ -4803,7 +4805,7 @@ QString unetbootin::getAvailableDriveLetter() {
     return QString("");
 }
 
-
+#ifdef Q_OS_WIN32
 void RasiePrivileges(void)
 {
     HANDLE hToken;
@@ -4838,6 +4840,7 @@ void unmountEFI(QString drive) {
     RasiePrivileges();
     unetbootin::callexternapp("mountvol", drive + " /D");
 }
+#endif
 
 static void removeItemIfExists(const QString& path) {
     QFileInfo info(path);

@@ -16,10 +16,12 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 
 #include <QtCore>
 #include <QtGui>
+#include <QtWidgets>
 #include <QtNetwork>
 #include <time.h>
 //#include <QtDebug>
 
+#include "qt4compat.h"
 #include "ui_unetbootin.h"
 
 #ifdef Q_OS_WIN32
@@ -27,6 +29,9 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 #define _WIN32_WINNT 0x0500
 #include <windows.h>
 #include <shellapi.h>
+#else
+// Define Windows constants for non-Windows platforms (for compile-time compatibility)
+#define SW_HIDE 0
 #endif
 
 #ifdef Q_OS_MACX
