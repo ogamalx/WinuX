@@ -335,14 +335,12 @@ public:
 	int getPartitionNumber(QString devicenode);
 	#endif
 	#ifdef Q_OS_WIN32
-	void installsvzip();
-	void configsysEdit();
-	void bootiniEdit();
-	void vistabcdEdit();
-    void removeRemixOsBcdedit(bool warch64);
+        void installsvzip();
+        void configsysEdit();
+        void bootiniEdit();
     void copyBootIni(QString target, QString source);
     int getBootMode();
-	#endif
+        #endif
 	void instIndvfl(QString srcfName, QString dstfName);
 	QString instTempfl(QString srcfName, QString dstfType);
 	void runinst();
@@ -373,7 +371,6 @@ public:
     const static int UEFI_MODE =  16000;
     const static int SECURE_BOOT_ENABLE = 16002;
     const static int BIT_LOCKER_ON = 16005;
-    const static int BOOT_MANAGER_NOT_FOUND = 16011;
     const static int INSTALL_TYPE = 0;
     const static int REMOVE_TYPE = 1;
     const static int X86_TYPE = 0;
@@ -398,10 +395,7 @@ public:
     bool preinstallationCheckUSB(const QString &targetDrive, void *pUDisk);
     int checkSecureBoot();
     int checkBitLocker(const QString &drive);
-    int saveWindowsBootManager(const QString &bcdFile, QString &bmWindowsPath);
-    int getWindowsBootManager(QVariant &bmWindowsPath);
     int updateBootManager(const QString &bmPath);
-    int getWindowsBootManagerFromBcdedit(const QString &bcdFile, QString &bmWindowsPath);
     QString getEfiTool();
     QString getEfiFile(const QString &baseDir);
     bool createDataImage();
