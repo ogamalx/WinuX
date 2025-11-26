@@ -2,7 +2,9 @@
 
 ## Quick Build (Recommended)
 
-The easiest way to build WinuX is using the provided build script:
+The easiest way to build WinuX is using the provided build script.
+
+From the project root directory:
 
 ```bash
 chmod +x test-build.sh
@@ -19,7 +21,7 @@ This script will automatically:
 
 1. Go to your repo `ogamalx/WinuX` → Code → Codespaces → Create codespace
 2. When VS Code opens in the browser, open a terminal
-3. Run the build script:
+3. Run the build script from the project root:
    ```bash
    ./test-build.sh
    ```
