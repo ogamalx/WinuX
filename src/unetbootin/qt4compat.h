@@ -1,6 +1,7 @@
 #ifndef QT4COMPAT_H
 #define QT4COMPAT_H
 
+#include <QtCore>
 #include <QtNetwork>
 
 // Qt4 compatibility shims for Qt5 build
