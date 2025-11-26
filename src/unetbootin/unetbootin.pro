@@ -6,7 +6,6 @@ CONFIG += release \
     static
 HEADERS += unetbootin.h \
     LspciInfo.h \
-    remixosudisk.h \
     ganalytics.hpp \
     dataimageconfigdialog.h \
     waitingdialog.h \
@@ -21,9 +20,13 @@ SOURCES += main.cpp \
     distrolst.cpp \
     distrover.cpp \
     distrovercust.cpp \
-    remixosudisk.cpp \
     dataimageconfigdialog.cpp \
     waitingdialog.cpp
+
+win32 {
+    HEADERS += remixosudisk.h
+    SOURCES += remixosudisk.cpp
+}
 QT += core \
     gui \
     network

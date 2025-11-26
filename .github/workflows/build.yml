@@ -18,5 +18,6 @@ jobs:
       - name: Build
         working-directory: src/unetbootin
         run: |
+          uic unetbootin.ui -o ui_unetbootin.h
           qmake unetbootin.pro
           make -j"$(nproc)"
