@@ -855,10 +855,18 @@ void unetbootin::on_cancelbutton_clicked()
 	close();
 }
 
-bool supportSSE4() {
+#ifdef Q_OS_WIN32
+bool supportSSE4()
+{
     uint32_t flags = android_getCpuFeatures_link_time();
     return (flags & ANDROID_CPU_X86_FEATURE_SSE4_1) != 0;
 }
+#else
+bool supportSSE4()
+{
+    return true;
+}
+#endif
 
 int unetbootin::do_okbutton()
 {
