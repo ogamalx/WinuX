@@ -13,11 +13,15 @@ jobs:
       - name: Install Qt
         run: |
           sudo apt update
-          sudo apt install -y qtbase5-dev qtchooser qt5-qmake qtbase5-dev-tools
+          sudo apt install -y qtbase5-dev qtchooser qt5-qmake qtbase5-dev-tools qttools5-dev-tools
 
       - name: Build
         working-directory: src/unetbootin
         run: |
+          # Generate translation files
+          for ts_file in *.ts; do lrelease "$ts_file" -qm "${ts_file%.ts}.qm"; done
+          # Generate UI headers
           uic unetbootin.ui -o ui_unetbootin.h
+          # Build project
           qmake unetbootin.pro
           make -j"$(nproc)"

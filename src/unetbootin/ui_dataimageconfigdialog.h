@@ -1,25 +1,21 @@
 /********************************************************************************
-** Form generated from reading ui file 'dataimageconfigdialog.ui'
+** Form generated from reading UI file 'dataimageconfigdialog.ui'
 **
-** Created: Wed Apr 20 17:01:11 2016
-**      by: Qt User Interface Compiler version 4.5.0
+** Created by: Qt User Interface Compiler version 5.15.13
 **
-** WARNING! All changes made in this file will be lost when recompiling ui file!
+** WARNING! All changes made in this file will be lost when recompiling UI file!
 ********************************************************************************/
 
 #ifndef UI_DATAIMAGECONFIGDIALOG_H
 #define UI_DATAIMAGECONFIGDIALOG_H
 
 #include <QtCore/QVariant>
-#include <QtGui/QAction>
-#include <QtGui/QApplication>
-#include <QtGui/QButtonGroup>
-#include <QtGui/QDialog>
-#include <QtGui/QHeaderView>
-#include <QtGui/QLabel>
-#include <QtGui/QPushButton>
-#include <QtGui/QRadioButton>
-#include <QtGui/QSplitter>
+#include <QtWidgets/QApplication>
+#include <QtWidgets/QDialog>
+#include <QtWidgets/QLabel>
+#include <QtWidgets/QPushButton>
+#include <QtWidgets/QRadioButton>
+#include <QtWidgets/QSplitter>
 
 QT_BEGIN_NAMESPACE
 
@@ -72,14 +68,13 @@ public:
 
     void retranslateUi(QDialog *DataImageConfigDialog)
     {
-        DataImageConfigDialog->setWindowTitle(QApplication::translate("DataImageConfigDialog", "Dialog", 0, QApplication::UnicodeUTF8));
-        pushButton->setText(QApplication::translate("DataImageConfigDialog", "Ok", 0, QApplication::UnicodeUTF8));
-        label_2->setText(QApplication::translate("DataImageConfigDialog", "A larger system size is recommended because you can install more apps.", 0, QApplication::UnicodeUTF8));
-        label->setText(QApplication::translate("DataImageConfigDialog", "Choose system size:", 0, QApplication::UnicodeUTF8));
-        radioButton1->setText(QApplication::translate("DataImageConfigDialog", "8GB", 0, QApplication::UnicodeUTF8));
-        radioButton2->setText(QApplication::translate("DataImageConfigDialog", "16GB", 0, QApplication::UnicodeUTF8));
-        radioButton3->setText(QApplication::translate("DataImageConfigDialog", "32GB(Recommended)", 0, QApplication::UnicodeUTF8));
-        Q_UNUSED(DataImageConfigDialog);
+        DataImageConfigDialog->setWindowTitle(QCoreApplication::translate("DataImageConfigDialog", "Dialog", nullptr));
+        pushButton->setText(QCoreApplication::translate("DataImageConfigDialog", "Ok", nullptr));
+        label_2->setText(QCoreApplication::translate("DataImageConfigDialog", "A larger system size is recommended because you can install more apps.", nullptr));
+        label->setText(QCoreApplication::translate("DataImageConfigDialog", "Choose system size:", nullptr));
+        radioButton1->setText(QCoreApplication::translate("DataImageConfigDialog", "8GB", nullptr));
+        radioButton2->setText(QCoreApplication::translate("DataImageConfigDialog", "16GB", nullptr));
+        radioButton3->setText(QCoreApplication::translate("DataImageConfigDialog", "32GB(Recommended)", nullptr));
     } // retranslateUi
 
 };

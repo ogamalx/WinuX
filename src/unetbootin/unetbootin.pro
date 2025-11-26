@@ -9,7 +9,8 @@ HEADERS += unetbootin.h \
     ganalytics.hpp \
     dataimageconfigdialog.h \
     waitingdialog.h \
-    constant.h
+    constant.h \
+    qt4compat.h
 
 FORMS += unetbootin.ui \
     dataimageconfigdialog.ui \
@@ -29,7 +30,14 @@ win32 {
 }
 QT += core \
     gui \
+    widgets \
     network
+
+# Windows-specific files
+win32 {
+    HEADERS += remixosudisk.h
+    SOURCES += remixosudisk.cpp
+}
 ICON = unetbootin.icns
 TRANSLATIONS += unetbootin.ts \
     unetbootin_am.ts \
