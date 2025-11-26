@@ -4058,7 +4058,7 @@ void unetbootin::runinsthdd()
 	instIndvfl("ubnldr.exe", QString("%1ubnldr.exe").arg(systemDrive));
 
 	// WinuX: disable Remix uninstall registry for now
-	// QSettings install("HKEY_LOCAL_MACHINE/Software/Microsoft/Windows/CurrentVersion/Uninstall/RemixOS",
+	// QSettings install("HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\RemixOS",
 	//                   QSettings::NativeFormat);
 	// install.setValue("Location", targetDrive);
 	// install.setValue("DisplayName", "Remix OS");
