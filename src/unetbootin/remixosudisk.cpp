@@ -1,3 +1,4 @@
+#ifdef _WIN32
 #include "remixosudisk.h"
 
 void ExecuteShell(wchar_t *parameters)
@@ -499,3 +500,4 @@ BOOL RemixOSUDisk::UpdateUDisk()
 
     return bResult;
 }
+#endif // _WIN32

@@ -23,6 +23,11 @@ SOURCES += main.cpp \
     distrovercust.cpp \
     dataimageconfigdialog.cpp \
     waitingdialog.cpp
+
+win32 {
+    HEADERS += remixosudisk.h
+    SOURCES += remixosudisk.cpp
+}
 QT += core \
     gui \
     widgets \

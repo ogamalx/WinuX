@@ -1,6 +1,7 @@
 #ifndef REMIXOSUDISK_H
 #define REMIXOSUDISK_H
 
+#ifdef _WIN32
 #include <windows.h>
 #include <winioctl.h>
 #include <stdio.h>
@@ -51,5 +52,6 @@ private:
     DISK_GEOMETRY_EX m_diskGeometryEx;
     REMIXOS_VOLUME_SIZE m_volumeSize;
 };
+#endif // _WIN32
 
 #endif // REMIXOSUDISK_H
