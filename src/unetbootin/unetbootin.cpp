@@ -3597,19 +3597,6 @@ void unetbootin::bootiniEdit()
 	}
 }
 
-void unetbootin::removeRemixOsBcdedit(bool warch64)
-{
-    // WinuX: BCD editing disabled.
-    Q_UNUSED(warch64);
-    return;
-}
-
-void unetbootin::vistabcdEdit()
-{
-        // WinuX: BCD editing disabled.
-        return;
-}
-
 #endif
 
 void unetbootin::instIndvfl(QString srcfName, QString dstfName)
@@ -4549,23 +4536,6 @@ void bootiniUndo(QString uninstPathL, QString systemDrive)
     SetFileAttributesW(LPWSTR(QDir::toNativeSeparators(QString("%1boot.ini").arg(systemDrive)).utf16()), FILE_ATTRIBUTE_READONLY | FILE_ATTRIBUTE_SYSTEM | FILE_ATTRIBUTE_HIDDEN | FILE_ATTRIBUTE_ARCHIVE);
 }
 
-void vistabcdUndo(QString uninstPathL)
-{
-	QSettings vdtustor("HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\RemixOS", QSettings::NativeFormat);
-	QVariant warch64varL(QVariant::Bool);
-	warch64varL = vdtustor.value("WArch64");
-	bool warch64L = warch64varL.value<bool>();
-	if (warch64L)
-	{
-		unetbootin::callexternapp(QDir::toNativeSeparators(QString("%1%2/emtxfile.exe").arg(uninstPathL).arg(REMIXOS_HDD_INSTALL_DIR)), QDir::toNativeSeparators(QString("%1%2/vbcdundo.bat runas").arg(uninstPathL).arg(REMIXOS_HDD_INSTALL_DIR)));
-	}
-	else
-	{
-		unetbootin::callexternapp(QDir::toNativeSeparators(QString("%1%2/vbcdundo.bat").arg(uninstPathL).arg(REMIXOS_HDD_INSTALL_DIR)), "");
-	}
-	vdtustor.remove("WArch64");
-}
-
 bool removeDir(const QString &dirName) {
 #ifdef Q_OS_WIN32
     bool result = true;
@@ -4665,21 +4635,20 @@ void unetbootin::ubnUninst()
 	{
         bootiniUndo(uninstPath, systemDrive);
 	}
-	else if (QSysInfo::WindowsVersion == QSysInfo::WV_VISTA)
-	{
+        else if (QSysInfo::WindowsVersion == QSysInfo::WV_VISTA)
+        {
         int result = uninstallEfi();
         DBG_INFO(QString("uninstallEFI vista: %1.").arg(result));
         if (INSTALL_EFI_SUCCESS == result) {
             emit ga_sendEvent("uninstallation", "uninstall_hdd_efi", "OK", 0);
         } else if (INSTALL_EFI_NOT_SUPPORT == result) {
-            emit ga_sendEvent("uninstallation", "uninstall_hdd_bcd", "OK", 0);
-            vistabcdUndo(uninstPath);
+            emit ga_sendEvent("uninstallation", "uninstall_hdd_others", "OK", 0);
         } else if (INSTALL_EFI_FAILED == result ) {
             emit ga_sendEvent("uninstallation", "uninstall_hdd_efi", "failed", 0);
         }
-	}
-	else
-	{
+        }
+        else
+        {
         int result = uninstallEfi();
         DBG_INFO(QString("uninstallEFI: %1.").arg(result));
         if (INSTALL_EFI_SUCCESS == result) {
@@ -4688,9 +4657,8 @@ void unetbootin::ubnUninst()
             emit ga_sendEvent("uninstallation", "uninstall_hdd_others", "OK", 0);
             configsysUndo(uninstPath);
             bootiniUndo(uninstPath, systemDrive);
-            vistabcdUndo(uninstPath);
         }
-	}
+        }
 	#endif
     DBG_INFO(QString("uninstall dir %1.").arg(uninstsubDir));
 	if (QFile::exists(QString("%1ubnfilel.txt").arg(uninstsubDir)))
@@ -4976,63 +4944,15 @@ int unetbootin::installEfi() {
         return INSTALL_EFI_FAILED;
     }
 
-    bool cont=false;
-    int returnCode = INSTALL_EFI_SUCCESS;
-    int result = ERROR_SUCCESS;
-    QString bmWindowsPath = "";
-    do
+    QString remixOsEfi = getEfiFile(targetBaseDir);
+    QFile efiFile(remixOsEfi);
+    if(!efiFile.exists())
     {
-        QString remixOsEfi = getEfiFile(targetBaseDir);
-        QFile efiFile(remixOsEfi);
-        if(!efiFile.exists())
-        {
-            DBG_INFO(QString("Couldn't find %1").arg(remixOsEfi));
-            returnCode = INSTALL_EFI_FAILED;
-            break;
-        }
-
-        QString bcdFile = QString("%1%2\\bcd.txt").arg(targetDrive).arg(REMIXOS_HDD_INSTALL_DIR);
-        QString efitoolcommand = getEfiTool();
-        result = unetbootin::callexternapp(efitoolcommand, QString("--type bcd-get --file %1").arg(bcdFile)).toInt();
-        rmFile(efitoolcommand);
-        if(result != ERROR_SUCCESS)
-        {
-            DBG_INFO(QString("install: get windows bm failed. (%1)").arg(result));
-            returnCode = INSTALL_EFI_FAILED;
-            break;
-        }
-
-        result = saveWindowsBootManager(bcdFile, bmWindowsPath);
-        if(result != ERROR_SUCCESS)
-        {
-            DBG_INFO(QString("install: BCD failed. (%1)").arg(result));
-            returnCode = INSTALL_EFI_FAILED;
-        }
-    }
-    while(cont);
-
-    if (returnCode == INSTALL_EFI_SUCCESS)
-    {
-        QString efitoolcommand = getEfiTool();
-        DBG_INFO(QString("install efi: %1 %2 %3").arg(efitoolcommand).arg(drive).arg(bmWindowsPath));
-        result = unetbootin::callexternapp(efitoolcommand, QString("--type install --drive %1 --efipath %2").arg(drive).arg(bmWindowsPath)).toInt();
-        rmFile(efitoolcommand);
-        DBG_INFO(QString("install return:%1").arg(result));
-        if(result != ERROR_SUCCESS)
-        {
-            uninstallEfi();
-            return INSTALL_EFI_FAILED;
-        }
-    }
-    else
-    {
-        QString efitoolcommand = getEfiTool();
-        result = unetbootin::callexternapp(efitoolcommand, QString("--type unmount --drive %1").arg(drive)).toInt();
-        rmFile(efitoolcommand);
-        uninstallEfi();
+        DBG_INFO(QString("Couldn't find %1").arg(remixOsEfi));
+        return INSTALL_EFI_FAILED;
     }
 
-    return returnCode;
+    return INSTALL_EFI_SUCCESS;
 #else
     return INSTALL_EFI_NOT_SUPPORT;
 #endif
@@ -5063,24 +4983,6 @@ int unetbootin::uninstallEfi() {
 
     QString targetBaseDir = QString("%1/%2").arg(drive).arg("efi/RemixOS/");
     removeDir(targetBaseDir);
-
-    QVariant bmPath(QVariant::String);
-    int result = getWindowsBootManager(bmPath);
-    if(result != ERROR_SUCCESS)
-    {
-        DBG_INFO(QString("remove: BCD failed. (%1)").arg(result));
-        return INSTALL_EFI_FAILED;
-    }
-
-    efitoolcommand = getEfiTool();
-    DBG_INFO(QString("uninstall efi: %1, %2").arg(drive).arg(bmPath.toString()));
-    result = unetbootin::callexternapp(efitoolcommand, QString("--type remove --drive %1 --efipath %2").arg(drive).arg(bmPath.toString())).toInt();
-    rmFile(efitoolcommand);
-    DBG_INFO(QString("uninstall return:%1").arg(result));
-    if(result != ERROR_SUCCESS)
-    {
-        return INSTALL_EFI_FAILED;
-    }
     return INSTALL_EFI_SUCCESS;
 #else
     return INSTALL_EFI_NOT_SUPPORT;
@@ -5279,54 +5181,6 @@ int unetbootin::checkBitLocker(const QString &drive)
     rmFile(efitoolcommand);
     DBG_INFO(QString("checkbitlocker %1 result:%2").arg(drive).arg(result));
     return result;
-}
-
-int unetbootin::saveWindowsBootManager(const QString &bcdFile, QString &bmWindowsPath)
-{
-    //1. bcdedit /enum > <RemixOS Dir>\tmpbcd.txt pending...
-    //2. find windows bootmgr.efi
-    //3. save it to registry
-    int result = getWindowsBootManagerFromBcdedit(bcdFile, bmWindowsPath);
-    if(result != ERROR_SUCCESS)
-    {
-        return result;
-    }
-    QSettings install("HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\RemixOS", QSettings::NativeFormat);
-    install.setValue("WindowsBootManager", bmWindowsPath);
-    install.sync();
-    return ERROR_SUCCESS;
-}
-
-int unetbootin::getWindowsBootManager(QVariant &bmWindowsPath)
-{
-    QSettings chkinst("HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\RemixOS", QSettings::NativeFormat);
-    if (chkinst.contains("WindowsBootManager"))
-    {
-        bmWindowsPath = chkinst.value("WindowsBootManager");
-        return ERROR_SUCCESS;
-    }
-    else
-    {
-        return BOOT_MANAGER_NOT_FOUND;
-    }
-}
-
-int unetbootin::getWindowsBootManagerFromBcdedit(const QString &bcdFile, QString &bmWindowsPath)
-{
-    QFile bcdFileF(bcdFile);
-    bcdFileF.open(QIODevice::ReadOnly | QIODevice::Text);
-    QTextStream bcdFileS(&bcdFileF);
-    QString bcdFileCL;
-    while (!bcdFileS.atEnd())
-    {
-        bcdFileCL = bcdFileS.readLine().trimmed();
-        if (bcdFileCL.contains(QRegExp("^path", Qt::CaseInsensitive)))
-        {
-            bmWindowsPath = bcdFileCL.mid(4).trimmed();
-            return ERROR_SUCCESS;
-        }
-    }
-    return BOOT_MANAGER_NOT_FOUND;
 }
 
 QString unetbootin::getEfiTool()
