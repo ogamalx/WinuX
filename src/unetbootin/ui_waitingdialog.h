@@ -1,22 +1,18 @@
 /********************************************************************************
-** Form generated from reading ui file 'waitingdialog.ui'
+** Form generated from reading UI file 'waitingdialog.ui'
 **
-** Created: Wed Apr 13 19:35:30 2016
-**      by: Qt User Interface Compiler version 4.5.0
+** Created by: Qt User Interface Compiler version 5.15.13
 **
-** WARNING! All changes made in this file will be lost when recompiling ui file!
+** WARNING! All changes made in this file will be lost when recompiling UI file!
 ********************************************************************************/
 
 #ifndef UI_WAITINGDIALOG_H
 #define UI_WAITINGDIALOG_H
 
 #include <QtCore/QVariant>
-#include <QtGui/QAction>
-#include <QtGui/QApplication>
-#include <QtGui/QButtonGroup>
-#include <QtGui/QDialog>
-#include <QtGui/QHeaderView>
-#include <QtGui/QLabel>
+#include <QtWidgets/QApplication>
+#include <QtWidgets/QDialog>
+#include <QtWidgets/QLabel>
 
 QT_BEGIN_NAMESPACE
 
@@ -41,9 +37,8 @@ public:
 
     void retranslateUi(QDialog *WaitingDialog)
     {
-        WaitingDialog->setWindowTitle(QApplication::translate("WaitingDialog", "Dialog", 0, QApplication::UnicodeUTF8));
-        infolabel->setText(QApplication::translate("WaitingDialog", "Installation on FAT32 format hard disk will take a while. Please wait...", 0, QApplication::UnicodeUTF8));
-        Q_UNUSED(WaitingDialog);
+        WaitingDialog->setWindowTitle(QCoreApplication::translate("WaitingDialog", "Dialog", nullptr));
+        infolabel->setText(QCoreApplication::translate("WaitingDialog", "Installation on FAT32 format hard disk will take a while. Please wait...", nullptr));
     } // retranslateUi
 
 };
