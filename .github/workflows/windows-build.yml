@@ -1,0 +1,46 @@
+name: Build WinuX (Windows)
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout source
+      uses: actions/checkout@v4
+
+    - name: Install Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.x'
+
+    - name: Install Qt (Qt 5.15.2)
+      run: |
+        pip install aqtinstall
+        aqt install-qt windows desktop 5.15.2 win64_msvc2019_64 --outputdir C:\Qt
+
+    - name: Set Qt paths
+      shell: pwsh
+      run: |
+        echo "QtDir=C:\Qt\5.15.2\msvc2019_64" | Out-File -FilePath $env:GITHUB_ENV -Append
+        echo "$env:QtDir\bin" | Out-File -FilePath $env:GITHUB_PATH -Append
+
+    - name: Configure (qmake)
+      run: |
+        cd src/unetbootin
+        qmake unetbootin.pro
+
+    - name: Build (nmake)
+      run: |
+        cd src/unetbootin
+        nmake
+
+    - name: Upload EXE
+      uses: actions/upload-artifact@v4
+      with:
+        name: winux-exe
+        path: src/unetbootin/release/*.exe
