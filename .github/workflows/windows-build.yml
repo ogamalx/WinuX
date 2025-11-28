@@ -27,11 +27,13 @@ jobs:
         with:
           submodules: true
 
-      - name: Install Visual Studio C++ Build Tools
-        shell: pwsh
-        run: |
-          choco install -y visualstudio2022buildtools `
-            --package-parameters "--add Microsoft.VisualStudio.Workload.VCTools --includeRecommended --passive --locale en-US"
+      # GitHub's windows-latest runner already has Visual Studio and Build Tools.
+      # Try without installing via Chocolatey first; uncomment only if needed.
+      # - name: Install Visual Studio C++ Build Tools
+      #   shell: pwsh
+      #   run: |
+      #     choco install -y visualstudio2022buildtools `
+      #       --package-parameters "--add Microsoft.VisualStudio.Workload.VCTools --includeRecommended --passive --locale en-US"
 
       - name: Set up MSVC developer command prompt
         shell: pwsh
@@ -84,20 +86,22 @@ jobs:
             throw "VCVARS_PATH not set in environment."
           }
 
-          # Run cl.exe inside the MSVC dev environment and capture version
+          # Run cl.exe under the VC environment and capture output
           $cmd = "`"$vcvars`" && cl 2>&1"
           $output = cmd.exe /c $cmd
 
-          $match = $output | Select-String -Pattern 'Version\s+(\d+)\.(\d+)\.(\d+)\.(\d+)'
+          # Match just "Version 19.44" etc. (ignore the rest)
+          $match = $output | Select-String -Pattern 'Version\s+(\d+)\.(\d+)'
           if (-not $match) {
-            Write-Host $output
+            Write-Host "cl.exe output:"
+            $output | Write-Host
             throw "Failed to parse cl.exe version from output."
           }
 
           $major = [int]$match.Matches[0].Groups[1].Value
           $minor = [int]$match.Matches[0].Groups[2].Value
 
-          # qmake expects something like 1920, 1930, etc.
+          # QMAKE_MSC_VER ≈ major*100 + minor, e.g. 19.44 -> 1944
           $mscVer = $major * 100 + $minor
 
           Write-Host "Detected cl.exe version $major.$minor -> QMAKE_MSC_VER=$mscVer"
