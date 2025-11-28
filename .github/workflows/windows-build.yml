@@ -1,64 +1,99 @@
-name: build-windows
+name: Build WinuX (Windows)
 
 on:
   push:
+    branches: [ master ]
+    paths:
+      - "src/**"
+      - ".github/workflows/windows-build.yml"
   pull_request:
+    branches: [ master ]
+    paths:
+      - "src/**"
+      - ".github/workflows/windows-build.yml"
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: windows-latest
-    timeout-minutes: 60
 
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    # 1) Install MSVC + Win10 SDK
-    - name: Install MSVC Build Tools
-      uses: microsoft/setup-msbuild@v1.3.1
+      # --- Python (for aqtinstall) ---
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
 
-    - name: Install C++ Build Tools
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: '6.0.x'
+      # --- Cache Qt installation ---
+      - name: Cache Qt 5.15.2 (MSVC 2019 x64)
+        id: cache-qt
+        uses: actions/cache@v4
+        with:
+          path: C:\Qt
+          key: qt-5.15.2-msvc2019_64
 
-    # Install VS Build Tools (C++ & Windows SDK)
-    - name: Install Visual Studio C++ Build Tools
-      run: |
-        choco install visualstudio2022buildtools --confirm --limit-output --params "'--add Microsoft.VisualStudio.Workload.VCTools --includeRecommended --includeOptional'"
+      - name: Install Qt 5.15.2 (MSVC 2019 x64)
+        if: steps.cache-qt.outputs.cache-hit != 'true'
+        shell: pwsh
+        run: |
+          pip install --upgrade pip
+          pip install aqtinstall
+          aqt install-qt windows desktop 5.15.2 win64_msvc2019_64 --outputdir C:\Qt
 
-    # 2) Install Qt using aqtinstall
-    - name: Install Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.10'
+      - name: Add Qt to PATH
+        shell: pwsh
+        run: |
+          echo "C:\Qt\5.15.2\msvc2019_64\bin" >> $env:GITHUB_PATH
+          echo "QtDir=C:\Qt\5.15.2\msvc2019_64" >> $env:GITHUB_ENV
 
-    - name: Install aqtinstall
-      run: pip install aqtinstall py7zr
+      # --- MSVC environment (no manual VS install) ---
+      - name: Set up MSVC developer command prompt
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
 
-    - name: Install Qt 5.15.2 (MSVC 2019)
-      run: |
-        aqt install-qt windows desktop 5.15.2 win64_msvc2019_64 --outputdir C:\Qt
+      # --- Detect MSC version and feed qmake ---
+      - name: Detect MSVC version for qmake
+        id: mscver
+        shell: pwsh
+        run: |
+          $clLine = & cl 2>&1 | Select-String 'Compiler Version'
+          if (-not $clLine) {
+            Write-Error "Failed to run cl.exe to detect MSVC version."
+          }
 
-    # 3) Configure qmake
-    - name: Configure with qmake
-      shell: pwsh
-      run: |
-        $QtDir = 'C:\Qt\5.15.2\msvc2019_64'
-        $env:PATH = "$QtDir\bin;$env:PATH"
-        cd src/unetbootin
-        & "$QtDir\bin\qmake.exe" unetbootin.pro
+          # Example line:
+          #   Microsoft (R) C/C++ Optimizing Compiler Version 19.39.33521 for x64
+          if ($clLine -match 'Version\s+19\.(\d{2})\.\d+') {
+            $mscVer = "19$($Matches[1])"
+          } else {
+            # Fallback: typical value for VS 2022
+            $mscVer = "1930"
+          }
 
-    # 4) Build EXE with nmake
-    - name: Build with nmake
-      shell: pwsh
-      run: |
-        cd src/unetbootin
-        nmake /NOLOGO
+          Write-Host "Detected QMAKE_MSC_VER = $mscVer"
+          echo "QMAKE_MSC_VER=$mscVer" >> $env:GITHUB_ENV
 
-    # 5) Upload final EXE
-    - name: Upload EXE artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: WinuX-windows-exe
-        path: src/unetbootin/release/*.exe
+      # --- qmake configure (release) ---
+      - name: Configure with qmake (release)
+        shell: pwsh
+        working-directory: src/unetbootin
+        run: |
+          qmake CONFIG+=release unetbootin.pro
+
+      # --- Build with nmake ---
+      - name: Build with nmake
+        shell: pwsh
+        working-directory: src/unetbootin
+        run: |
+          nmake /NOLOGO
+
+      # --- Upload Windows EXE artifact ---
+      - name: Upload WinuX .exe artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: WinuX-windows-exe
+          path: src/unetbootin/release/*.exe
