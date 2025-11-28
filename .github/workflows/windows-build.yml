@@ -1,101 +1,138 @@
-name: Build WinuX (Windows)
+name: build-windows
 
 on:
   push:
     branches: [ master ]
     paths:
-      - "src/**"
       - ".github/workflows/windows-build.yml"
+      - "src/**"
+      - "doc/**"
+      - "po/**"
   pull_request:
     branches: [ master ]
     paths:
-      - "src/**"
       - ".github/workflows/windows-build.yml"
-  workflow_dispatch:
+      - "src/**"
+      - "doc/**"
+      - "po/**"
 
 jobs:
   build:
     runs-on: windows-latest
+    timeout-minutes: 60
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          submodules: true
 
-      # --- Python (for aqtinstall) ---
-      - name: Set up Python
+      - name: Install Visual Studio C++ Build Tools
+        shell: pwsh
+        run: |
+          choco install -y visualstudio2022buildtools `
+            --package-parameters "--add Microsoft.VisualStudio.Workload.VCTools --includeRecommended --passive --locale en-US"
+
+      - name: Set up MSVC developer command prompt
+        shell: pwsh
+        run: |
+          $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+          if (-not (Test-Path $vswhere)) {
+            throw "vswhere.exe not found at $vswhere"
+          }
+
+          $installationPath = & $vswhere -latest `
+            -products * `
+            -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 `
+            -property installationPath
+
+          if (-not $installationPath) {
+            throw "MSVC Build Tools installation not found."
+          }
+
+          $vcvarsPath = Join-Path $installationPath "VC\Auxiliary\Build\vcvars64.bat"
+          if (-not (Test-Path $vcvarsPath)) {
+            throw "vcvars64.bat not found at $vcvarsPath"
+          }
+
+          "VCVARS_PATH=$vcvarsPath" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      - name: Install Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
-      # --- Cache Qt installation ---
-      - name: Cache Qt 5.15.2 (MSVC 2019 x64)
-        id: cache-qt
-        uses: actions/cache@v4
-        with:
-          path: C:\Qt
-          key: qt-5.15.2-msvc2019_64
-
-      - name: Install Qt 5.15.2 (MSVC 2019 x64)
-        if: steps.cache-qt.outputs.cache-hit != 'true'
+      - name: Install aqtinstall
         shell: pwsh
         run: |
-          pip install --upgrade pip
-          pip install aqtinstall
-          aqt install-qt windows desktop 5.15.2 win64_msvc2019_64 --outputdir C:\Qt
+          python -m pip install --upgrade pip
+          python -m pip install aqtinstall
 
-      - name: Add Qt to PATH
+      - name: Install Qt 5.15.2 (MSVC 2019)
         shell: pwsh
         run: |
-          echo "C:\Qt\5.15.2\msvc2019_64\bin" >> $env:GITHUB_PATH
-          echo "QtDir=C:\Qt\5.15.2\msvc2019_64" >> $env:GITHUB_ENV
+          python -m aqt install-qt --outputdir C:\Qt windows desktop 5.15.2 win64_msvc2019_64 `
+            --archives qtbase qttools
+          "QtDir=C:\Qt\5.15.2\msvc2019_64"        | Out-File -FilePath $env:GITHUB_ENV -Append
+          "C:\Qt\5.15.2\msvc2019_64\bin"         | Out-File -FilePath $env:GITHUB_PATH -Append
 
-      # --- MSVC environment (no manual VS install) ---
-      - name: Set up MSVC developer command prompt
-        uses: ilammy/msvc-dev-cmd@v1
-        with:
-          arch: x64
-
-      # --- Detect MSC version and feed qmake ---
       - name: Detect MSVC version for qmake
-        id: mscver
         shell: pwsh
         run: |
-          $clLine = & cl 2>&1 | Select-String 'Compiler Version'
-          if (-not $clLine) {
-            Write-Error "Failed to run cl.exe to detect MSVC version."
+          $vcvars = $env:VCVARS_PATH
+          if (-not $vcvars) {
+            throw "VCVARS_PATH not set in environment."
           }
 
-          # Example line:
-          #   Microsoft (R) C/C++ Optimizing Compiler Version 19.39.33521 for x64
-          if ($clLine -match 'Version\s+19\.(\d{2})\.\d+') {
-            $mscVer = "19$($Matches[1])"
-          } else {
-            # Fallback: typical value for VS 2022
-            $mscVer = "1930"
+          # Run cl.exe inside the MSVC dev environment and capture version
+          $cmd = "`"$vcvars`" && cl 2>&1"
+          $output = cmd.exe /c $cmd
+
+          $match = $output | Select-String -Pattern 'Version\s+(\d+)\.(\d+)\.(\d+)\.(\d+)'
+          if (-not $match) {
+            Write-Host $output
+            throw "Failed to parse cl.exe version from output."
           }
 
-          Write-Host "Detected QMAKE_MSC_VER = $mscVer"
-          echo "QMAKE_MSC_VER=$mscVer" >> $env:GITHUB_ENV
+          $major = [int]$match.Matches[0].Groups[1].Value
+          $minor = [int]$match.Matches[0].Groups[2].Value
 
-      # --- qmake configure (release) ---
+          # qmake expects something like 1920, 1930, etc.
+          $mscVer = $major * 100 + $minor
+
+          Write-Host "Detected cl.exe version $major.$minor -> QMAKE_MSC_VER=$mscVer"
+          "QMAKE_MSC_VER=$mscVer" | Out-File -FilePath $env:GITHUB_ENV -Append
+
       - name: Configure with qmake (release)
-  shell: pwsh
-  working-directory: src/unetbootin
-  run: |
-    if (-not $env:QMAKE_MSC_VER) {
-      Write-Error "QMAKE_MSC_VER is not set in the environment."
-    }
-    qmake "QMAKE_MSC_VER=$env:QMAKE_MSC_VER" CONFIG+=release unetbootin.pro
+        shell: pwsh
+        working-directory: src/unetbootin
+        run: |
+          $vcvars = $env:VCVARS_PATH
+          if (-not $vcvars) {
+            throw "VCVARS_PATH not set."
+          }
+          if (-not $env:QMAKE_MSC_VER) {
+            throw "QMAKE_MSC_VER is not set."
+          }
 
-      # --- Build with nmake ---
+          $cmd = "`"$vcvars`" && qmake `"QMAKE_MSC_VER=$env:QMAKE_MSC_VER`" CONFIG+=release unetbootin.pro"
+          Write-Host "Running: $cmd"
+          cmd.exe /c $cmd
+
       - name: Build with nmake
         shell: pwsh
         working-directory: src/unetbootin
         run: |
-          nmake /NOLOGO
+          $vcvars = $env:VCVARS_PATH
+          if (-not $vcvars) {
+            throw "VCVARS_PATH not set."
+          }
 
-      # --- Upload Windows EXE artifact ---
-      - name: Upload WinuX .exe artifact
+          $cmd = "`"$vcvars`" && nmake /NOLOGO"
+          Write-Host "Running: $cmd"
+          cmd.exe /c $cmd
+
+      - name: Upload EXE artifact
         uses: actions/upload-artifact@v4
         with:
           name: WinuX-windows-exe
