@@ -1,49 +1,63 @@
-name: Build WinuX (Windows)
+name: build-windows
 
 on:
   push:
-    branches: [ master ]
   pull_request:
 
 jobs:
-  build-windows:
+  build:
     runs-on: windows-latest
+    timeout-minutes: 15
 
     steps:
-    - name: Checkout repository
+    - name: Checkout
       uses: actions/checkout@v4
 
+    # 1) Install MSVC + Win10 SDK
+    - name: Install MSVC Build Tools
+      uses: microsoft/setup-msbuild@v1.3.1
+
+    - name: Install C++ Build Tools
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '6.0.x'
+
+    # Install VS Build Tools (C++ & Windows SDK)
+    - name: Install Visual Studio C++ Build Tools
+      run: |
+        choco install visualstudio2022buildtools --confirm --limit-output --params "'--add Microsoft.VisualStudio.Workload.VCTools --includeRecommended --includeOptional'"
+
+    # 2) Install Qt using aqtinstall
     - name: Install Python
       uses: actions/setup-python@v4
       with:
-        python-version: '3.x'
+        python-version: '3.10'
+
+    - name: Install aqtinstall
+      run: pip install aqtinstall py7zr
 
     - name: Install Qt 5.15.2 (MSVC 2019)
       run: |
-        pip install aqtinstall
         aqt install-qt windows desktop 5.15.2 win64_msvc2019_64 --outputdir C:\Qt
 
+    # 3) Configure qmake
     - name: Configure with qmake
       shell: pwsh
       run: |
         $QtDir = 'C:\Qt\5.15.2\msvc2019_64'
-        $QMake = "$QtDir\bin\qmake.exe"
-
-        if (-not (Test-Path $QMake)) {
-          Write-Error "FATAL: qmake.exe not found at $QMake"
-          exit 1
-        }
-
+        $env:PATH = "$QtDir\bin;$env:PATH"
         cd src/unetbootin
-        & $QMake unetbootin.pro
+        & "$QtDir\bin\qmake.exe" unetbootin.pro
 
+    # 4) Build EXE with nmake
     - name: Build with nmake
       shell: pwsh
       run: |
         cd src/unetbootin
         nmake /NOLOGO
 
-    - name: Upload build artifact (WinuX.exe)
+    # 5) Upload final EXE
+    - name: Upload EXE artifact
       uses: actions/upload-artifact@v4
       with:
         name: WinuX-windows-exe
