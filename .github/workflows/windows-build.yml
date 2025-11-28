@@ -5,7 +5,35 @@ on:
     branches: [ master ]
     paths:
       - ".github/workflows/windows-build.yml"
-      - "src/**"
+      - "src/**"      - name: Detect MSVC version for qmake
+        shell: pwsh
+        run: |
+          $vcvars = $env:VCVARS_PATH
+          if (-not $vcvars) {
+            throw "VCVARS_PATH not set in environment."
+          }
+
+          # Run cl under the VC environment and capture output
+          $cmd = "`"$vcvars`" && cl 2>&1"
+          $output = cmd.exe /c $cmd
+
+          # Try to match "Version 19.44" (ignore the rest)
+          $match = $output | Select-String -Pattern 'Version\s+(\d+)\.(\d+)'
+          if (-not $match) {
+            Write-Host "cl.exe output:"
+            $output | Write-Host
+            throw "Failed to parse cl.exe version from output."
+          }
+
+          $major = [int]$match.Matches[0].Groups[1].Value
+          $minor = [int]$match.Matches[0].Groups[2].Value
+
+          # QMAKE_MSC_VER = _MSC_VER ≈ major*100 + minor
+          $mscVer = $major * 100 + $minor
+
+          Write-Host "Detected cl.exe version $major.$minor -> QMAKE_MSC_VER=$mscVer"
+          "QMAKE_MSC_VER=$mscVer" | Out-File -FilePath $env:GITHUB_ENV -Append
+
       - "doc/**"
       - "po/**"
   pull_request:
