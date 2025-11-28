@@ -10,7 +10,7 @@ jobs:
     runs-on: windows-latest
 
     steps:
-    - name: Checkout source
+    - name: Checkout repository
       uses: actions/checkout@v4
 
     - name: Install Python
@@ -18,29 +18,33 @@ jobs:
       with:
         python-version: '3.x'
 
-    - name: Install Qt (Qt 5.15.2)
+    - name: Install Qt 5.15.2 (MSVC 2019)
       run: |
         pip install aqtinstall
         aqt install-qt windows desktop 5.15.2 win64_msvc2019_64 --outputdir C:\Qt
 
-    - name: Set Qt paths
+    - name: Configure with qmake
       shell: pwsh
       run: |
-        echo "QtDir=C:\Qt\5.15.2\msvc2019_64" | Out-File -FilePath $env:GITHUB_ENV -Append
-        echo "$env:QtDir\bin" | Out-File -FilePath $env:GITHUB_PATH -Append
+        $QtDir = 'C:\Qt\5.15.2\msvc2019_64'
+        $QMake = "$QtDir\bin\qmake.exe"
 
-    - name: Configure (qmake)
+        if (-not (Test-Path $QMake)) {
+          Write-Error "FATAL: qmake.exe not found at $QMake"
+          exit 1
+        }
+
+        cd src/unetbootin
+        & $QMake unetbootin.pro
+
+    - name: Build with nmake
+      shell: pwsh
       run: |
         cd src/unetbootin
-        qmake unetbootin.pro
+        nmake /NOLOGO
 
-    - name: Build (nmake)
-      run: |
-        cd src/unetbootin
-        nmake
-
-    - name: Upload EXE
+    - name: Upload build artifact (WinuX.exe)
       uses: actions/upload-artifact@v4
       with:
-        name: winux-exe
+        name: WinuX-windows-exe
         path: src/unetbootin/release/*.exe
