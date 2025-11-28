@@ -119,7 +119,8 @@ jobs:
             throw "QMAKE_MSC_VER is not set."
           }
 
-          $cmd = "`"$vcvars`" && qmake `"QMAKE_MSC_VER=$env:QMAKE_MSC_VER`" CONFIG+=release unetbootin.pro"
+          # Set QMAKE_MSC_VER as environment variable within cmd.exe session before calling qmake
+          $cmd = "`"$vcvars`" && set QMAKE_MSC_VER=$env:QMAKE_MSC_VER && qmake CONFIG+=release unetbootin.pro"
           Write-Host "Running: $cmd"
           cmd.exe /c $cmd
 
