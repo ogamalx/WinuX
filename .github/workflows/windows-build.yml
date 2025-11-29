@@ -81,7 +81,8 @@ jobs:
             throw "VCVARS_PATH not set in environment."
           }
 
-          $cmd = "`"$vcvars`" && cl 2>&1"
+          # Use 'call' so the batch file returns control and allows running 'cl' in the same cmd session
+          $cmd = "call `"$vcvars`" && cl 2>&1"
           $output = cmd.exe /c $cmd
 
           $match = $output | Select-String -Pattern 'Microsoft.*?Version\s+(\d+)\.(\d+)'
@@ -100,38 +101,23 @@ jobs:
           "QMAKE_MSC_VER=$mscVer" | Out-File -FilePath $env:GITHUB_ENV -Append
 
       - name: Configure with qmake (release)
-        shell: pwsh
+        shell: cmd
         working-directory: src/unetbootin
+        env:
+          QMAKE_MSC_VER: ${{ env.QMAKE_MSC_VER }}
         run: |
-          $vcvars = $env:VCVARS_PATH
-          if (-not $vcvars) {
-            throw "VCVARS_PATH not set."
-          }
-          if (-not $env:QMAKE_MSC_VER) {
-            throw "QMAKE_MSC_VER is not set."
-          }
-
-          Write-Host "Using QMAKE_MSC_VER=$env:QMAKE_MSC_VER"
-
-          # IMPORTANT:
-          # - put QMAKE_MSC_VER into the cmd.exe environment via `set`
-          # - call qmake without quotes around the assignment
-          $cmd = "`"$vcvars`" && set QMAKE_MSC_VER=$env:QMAKE_MSC_VER && qmake CONFIG+=release QMAKE_MSC_VER=%QMAKE_MSC_VER% unetbootin.pro"
-          Write-Host "Running: $cmd"
-          cmd.exe /c $cmd
+          echo Using QMAKE_MSC_VER=%QMAKE_MSC_VER%
+          call "%VCVARS_PATH%"
+          qmake CONFIG+=release QMAKE_MSC_VER=%QMAKE_MSC_VER% unetbootin.pro
 
       - name: Build with nmake
-        shell: pwsh
+        shell: cmd
         working-directory: src/unetbootin
+        env:
+          QMAKE_MSC_VER: ${{ env.QMAKE_MSC_VER }}
         run: |
-          $vcvars = $env:VCVARS_PATH
-          if (-not $vcvars) {
-            throw "VCVARS_PATH not set."
-          }
-
-          $cmd = "`"$vcvars`" && nmake /NOLOGO"
-          Write-Host "Running: $cmd"
-          cmd.exe /c $cmd
+          call "%VCVARS_PATH%"
+          nmake /NOLOGO
 
       - name: Upload EXE artifact
         uses: actions/upload-artifact@v4
