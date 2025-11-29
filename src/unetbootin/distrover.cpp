@@ -21,11 +21,11 @@ unetbootin::tr("Welcome to <a href=\"http://unetbootin.sourceforge.net/\">UNetbo
 	"<ol><li>Select a distribution and version to download from the list above, or manually specify files to load below.</li>"
 	"<li>Select an installation type, and press OK to begin installing.</li></ol>") <<
 unetbootin::tr("== Select Version ==")));
-distroselect->addItem("Arch Linux", (QStringList() << "core" <<
+distroselect->addItem("Arch Linux", (QStringList() << "Latest_Live" <<
 unetbootin::tr("<b>Homepage:</b> <a href=\"http://www.archlinux.org/\">http://www.archlinux.org</a><br/>"
 	"<b>Description:</b> Arch Linux is a lightweight distribution optimized for speed and flexibility.<br/>"
-	"<b>Install Notes:</b> The default version allows for installation over the internet (FTP).") <<
-"core" << "core_x64" << "netinstall" << "netinstall_x64"));
+	"<b>Install Notes:</b> The Live version boots into a live environment for installation. Download the latest ISO from archlinux.org.") <<
+"Latest_Live" << "Latest_Live_x64"));
 distroselect->addItem("BackTrack", (QStringList() << "5R1-GNOME" <<
 unetbootin::tr("<b>Homepage:</b> <a href=\"http://www.backtrack-linux.org/\">http://www.backtrack-linux.org/</a><br/>"
 	"<b>Description:</b> BackTrack is a distribution focused on network analysis and penetration testing.<br/>"
@@ -145,6 +145,11 @@ unetbootin::tr("<b>Homepage:</b> <a href=\"http://www.lubuntu.net/\">http://www.
 	"<b>Description:</b> Lubuntu is an official Ubuntu derivative featuring the LXDE desktop.<br/>"
 	"<b>Install Notes:</b> The Live version allows for booting in Live mode, from which the installer can optionally be launched. The NetInstall version allows for installation over FTP, and can install Kubuntu and other official Ubuntu derivatives. If you would like to use a pre-downloaded alternate (not desktop) install iso, use the HdMedia option, and then place the alternate install iso file on the root directory of your hard drive or USB drive") <<
 ubuntuverlist));
+distroselect->addItem("Mabox Linux", (QStringList() << "Latest_Live" <<
+unetbootin::tr("<b>Homepage:</b> <a href=\"https://maboxlinux.org/\">https://maboxlinux.org</a><br/>"
+	"<b>Description:</b> Mabox Linux is a fast, lightweight Arch-based distribution featuring the Openbox window manager. It is designed for simplicity and speed.<br/>"
+	"<b>Install Notes:</b> Mabox boots in Live mode. For frugal install, extract the ISO contents to your drive. Requires x64 architecture.") <<
+"Latest_Live" << "Latest_Live_x64"));
 distroselect->addItem("Mandriva", (QStringList() << "2008.1_NetInstall" <<
 unetbootin::tr("<b>Homepage:</b> <a href=\"http://www.mandriva.com/\">http://www.mandriva.com/</a><br/>"
 	"<b>Description:</b> Mandriva is a user-friendly distro formerly known as Mandrake Linux.<br/>"

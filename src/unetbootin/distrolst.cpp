@@ -198,24 +198,18 @@ if (nameDistro == "xPUD")
 
 if (nameDistro == "Arch Linux")
 {
-	if (isarch64)
-	{
-		cpuarch = "x86_64";
-	}
-	else
-	{
-		cpuarch = "i686";
-	}
+	// Arch Linux is x86_64 only since 2017
+	cpuarch = "x86_64";
 	downloadfile(fileFilterNetDir(QStringList() <<
-	"http://mirrors.kernel.org/archlinux/iso/latest/" <<
-	"http://distro.ibiblio.org/archlinux/iso/latest/" <<
-	"http://mirror.rit.edu/archlinux/iso/latest/"
-	, 3072000, 2048576000, QList<QRegExp>() <<
-	QRegExp("^arch", Qt::CaseInsensitive) <<
+	"https://mirrors.kernel.org/archlinux/iso/latest/" <<
+	"https://geo.mirror.pkgbuild.com/iso/latest/" <<
+	"https://mirror.rackspace.com/archlinux/iso/latest/" <<
+	"https://mirrors.rit.edu/archlinux/iso/latest/"
+	, 524288000, 2048576000, QList<QRegExp>() <<
 	QRegExp("^archlinux", Qt::CaseInsensitive) <<
 	QRegExp(".iso$", Qt::CaseInsensitive) <<
 	QRegExp(cpuarch, Qt::CaseInsensitive) <<
-	QRegExp(relname, Qt::CaseInsensitive)
+	QRegExp("^archlinux-\\S{1,}-"+cpuarch+".iso$", Qt::CaseInsensitive)
 	), isotmpf);
 	extractiso(isotmpf);
 }
@@ -631,6 +625,17 @@ if (nameDistro == "Linux Mint")
 	QString("ftp://ftp.tpnet.pl/pub/linux/linuxmint/isos/stable/%1/").arg(relname) <<
 	QString("ftp://mirror.unej.ac.id/pub/iso/linux-mint/stable/%1/").arg(relname)
 	, 61440000, 1048576000, mintregex), isotmpf);
+	extractiso(isotmpf);
+}
+
+if (nameDistro == "Mabox Linux")
+{
+	// Mabox Linux is an Arch-based distribution, x86_64 only
+	// For best results, use the disk image option with a pre-downloaded ISO
+	cpuarch = "x86_64";
+	// Note: Mabox ISOs should be downloaded manually from https://maboxlinux.org/
+	// and used with the "Disk Image" option for reliable installation
+	downloadfile(QString("https://sourceforge.net/projects/mabox-linux/files/latest/download"), isotmpf);
 	extractiso(isotmpf);
 }
 
