@@ -84,7 +84,7 @@ jobs:
           $cmd = "`"$vcvars`" && cl 2>&1"
           $output = cmd.exe /c $cmd
 
-          $match = $output | Select-String -Pattern 'Version\s+(\d+)\.(\d+)\.(\d+)\.(\d+)'
+          $match = $output | Select-String -Pattern 'Microsoft.*?Version\s+(\d+)\.(\d+)'
           if (-not $match) {
             Write-Host "cl.exe output:"
             Write-Host $output
