@@ -113,10 +113,9 @@ jobs:
 
           Write-Host "Using QMAKE_MSC_VER=$env:QMAKE_MSC_VER"
 
-          # IMPORTANT:
-          # - put QMAKE_MSC_VER into the cmd.exe environment via `set`
-          # - call qmake without quotes around the assignment
-          $cmd = "`"$vcvars`" && set QMAKE_MSC_VER=$env:QMAKE_MSC_VER && qmake CONFIG+=release unetbootin.pro"
+          # Pass QMAKE_MSC_VER directly as a qmake command-line parameter
+          # to avoid environment variable scope issues between PowerShell/cmd.exe/qmake
+          $cmd = "`"$vcvars`" && qmake CONFIG+=release QMAKE_MSC_VER=$env:QMAKE_MSC_VER unetbootin.pro"
           Write-Host "Running: $cmd"
           cmd.exe /c $cmd
 
