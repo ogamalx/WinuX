@@ -112,6 +112,8 @@ jobs:
       - name: Build with nmake
         shell: cmd
         working-directory: src/unetbootin
+        env:
+          QMAKE_MSC_VER: ${{ env.QMAKE_MSC_VER }}
         run: |
           call "%VCVARS_PATH%"
           nmake /NOLOGO
