@@ -117,16 +117,18 @@ function Install-QtWithAqt {
         throw "Python is not installed. Please install Python 3.x from https://www.python.org/"
     }
     
-    Write-Status "Installing/updating aqtinstall..."
-    python -m pip install --upgrade pip | Out-Null
-    python -m pip install --upgrade aqtinstall | Out-Null
-    
     $qtDir = Join-Path $OutputDir "$Version\msvc2019_64"
     
-    if ((Test-Path $qtDir) -and $SkipQtInstall) {
+    # Check if Qt is already installed
+    if (Test-Path $qtDir) {
         Write-Success "Qt $Version already installed at $qtDir"
         return $qtDir
     }
+    
+    # Only install aqtinstall if we need to download Qt
+    Write-Status "Installing/updating aqtinstall..."
+    python -m pip install --upgrade pip 2>&1 | Out-Null
+    python -m pip install aqtinstall 2>&1 | Out-Null
     
     Write-Status "Installing Qt $Version (MSVC 2019 x64)..."
     Write-Status "This may take several minutes..."
