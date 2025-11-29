@@ -127,8 +127,15 @@ function Install-QtWithAqt {
     
     # Only install aqtinstall if we need to download Qt
     Write-Status "Installing/updating aqtinstall..."
-    python -m pip install --upgrade pip 2>&1 | Out-Null
-    python -m pip install aqtinstall 2>&1 | Out-Null
+    $pipOutput = python -m pip install --upgrade pip 2>&1
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "pip upgrade output: $pipOutput" -ForegroundColor Yellow
+    }
+    $aqtOutput = python -m pip install aqtinstall 2>&1
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "aqtinstall install output: $aqtOutput" -ForegroundColor Yellow
+        throw "Failed to install aqtinstall"
+    }
     
     Write-Status "Installing Qt $Version (MSVC 2019 x64)..."
     Write-Status "This may take several minutes..."

@@ -631,16 +631,11 @@ if (nameDistro == "Linux Mint")
 if (nameDistro == "Mabox Linux")
 {
 	// Mabox Linux is an Arch-based distribution, x86_64 only
+	// For best results, use the disk image option with a pre-downloaded ISO
 	cpuarch = "x86_64";
-	// Mabox releases are hosted on SourceForge and OSDN
-	downloadfile(fileFilterNetDir(QStringList() <<
-	"https://sourceforge.net/projects/mabox-linux/files/latest/download" <<
-	"https://osdn.net/projects/mabox-linux/storage/"
-	, 1073741824, 3221225472, QList<QRegExp>() <<
-	QRegExp("^mabox", Qt::CaseInsensitive) <<
-	QRegExp(".iso$", Qt::CaseInsensitive) <<
-	QRegExp(cpuarch, Qt::CaseInsensitive)
-	), isotmpf);
+	// Note: Mabox ISOs should be downloaded manually from https://maboxlinux.org/
+	// and used with the "Disk Image" option for reliable installation
+	downloadfile(QString("https://sourceforge.net/projects/mabox-linux/files/latest/download"), isotmpf);
 	extractiso(isotmpf);
 }
 
