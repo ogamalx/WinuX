@@ -154,11 +154,14 @@ function Install-QtWithAqt {
 function Get-MSCVersion {
     param([string]$VCVarsPath)
     
-    $cmd = "`"$VCVarsPath`" && cl 2>&1"
+    # Use 'call' so the batch file returns control and allows running 'cl' in the same cmd session
+    $cmd = "call `"$VCVarsPath`" && cl 2>&1"
     $output = cmd.exe /c $cmd
     
     $match = $output | Select-String -Pattern 'Microsoft.*?Version\s+(\d+)\.(\d+)'
     if (-not $match) {
+        Write-Host "cl.exe output:"
+        Write-Host $output
         throw "Failed to detect MSVC version"
     }
     
@@ -187,7 +190,7 @@ function Invoke-Build {
         if ($Clean) {
             Write-Status "Cleaning build artifacts..."
             if (Test-Path "Makefile") {
-                $cmd = "`"$VCVarsPath`" && nmake clean"
+                $cmd = "call `"$VCVarsPath`" && nmake clean"
                 cmd.exe /c $cmd 2>&1 | Out-Null
             }
             
@@ -212,7 +215,7 @@ function Invoke-Build {
         $env:PATH = "$QtDir\bin;$env:PATH"
         
         Write-Status "Configuring with qmake..."
-        $qmakeCmd = "`"$VCVarsPath`" && set QMAKE_MSC_VER=$MSCVer && qmake CONFIG+=release unetbootin.pro"
+        $qmakeCmd = "call `"$VCVarsPath`" && set QMAKE_MSC_VER=$MSCVer && qmake CONFIG+=release unetbootin.pro"
         Write-Host "Running: qmake CONFIG+=release unetbootin.pro" -ForegroundColor Gray
         cmd.exe /c $qmakeCmd
         
@@ -222,7 +225,7 @@ function Invoke-Build {
         Write-Success "qmake configuration completed"
         
         Write-Status "Building with nmake..."
-        $nmakeCmd = "`"$VCVarsPath`" && nmake /NOLOGO"
+        $nmakeCmd = "call `"$VCVarsPath`" && nmake /NOLOGO"
         cmd.exe /c $nmakeCmd
         
         if ($LASTEXITCODE -ne 0) {
