@@ -1,8 +1,72 @@
 # Building WinuX
 
-## Quick Build (Recommended)
+WinuX is a bootable USB creation tool based on UNetbootin. This guide covers building on both Windows and Linux.
 
-The easiest way to build WinuX is using the provided build script.
+## Windows Build (Recommended for Testing)
+
+### Quick Build with PowerShell
+
+The easiest way to build and test WinuX on **Windows 10/11 x64** is using the provided PowerShell script:
+
+```powershell
+# Run from project root directory (requires PowerShell 5.1+)
+.\test-build.ps1
+```
+
+This script will automatically:
+- Detect Visual Studio installation
+- Install Qt 5.15.2 via aqtinstall (if needed)
+- Configure and build the project with MSVC
+- Output the executable to `src\unetbootin\release\unetbootin.exe`
+
+### PowerShell Script Options
+
+```powershell
+# Clean build (removes previous build artifacts)
+.\test-build.ps1 -Clean
+
+# Use custom Qt installation path
+.\test-build.ps1 -QtPath "D:\Qt"
+
+# Skip Qt installation if already installed
+.\test-build.ps1 -SkipQtInstall
+
+# Specify Qt version
+.\test-build.ps1 -QtVersion "5.15.2"
+```
+
+### Windows Build Requirements
+
+- **Windows 10/11 x64**
+- **Visual Studio 2019 or 2022** with "Desktop development with C++" workload
+- **Python 3.x** (for aqtinstall Qt installer)
+- PowerShell 5.1 or later
+
+### Manual Windows Build
+
+If you prefer to build manually:
+
+1. Install Visual Studio 2019/2022 with C++ build tools
+2. Install Python 3.x and add to PATH
+3. Install Qt:
+   ```powershell
+   pip install aqtinstall
+   python -m aqt install-qt --outputdir C:\Qt windows desktop 5.15.2 win64_msvc2019_64 --archives qtbase qttools
+   ```
+4. Open "x64 Native Tools Command Prompt for VS"
+5. Navigate to project and build:
+   ```cmd
+   cd src\unetbootin
+   set PATH=C:\Qt\5.15.2\msvc2019_64\bin;%PATH%
+   qmake CONFIG+=release unetbootin.pro
+   nmake
+   ```
+
+---
+
+## Linux Build
+
+### Quick Build with Bash
 
 From the project root directory:
 
@@ -17,7 +81,7 @@ This script will automatically:
 - Generate UI headers
 - Build the project
 
-## Build in GitHub Codespaces (Interactive)
+### Build in GitHub Codespaces (Interactive)
 
 1. Go to your repo `ogamalx/WinuX` → Code → Codespaces → Create codespace
 2. When VS Code opens in the browser, open a terminal
@@ -26,7 +90,8 @@ This script will automatically:
    ./test-build.sh
    ```
 
-Alternatively, you can build manually:
+### Manual Linux Build
+
 1. Install Qt development tools:
    ```bash
    sudo apt update
@@ -41,22 +106,62 @@ Alternatively, you can build manually:
 
 If the build completes without errors, ✅ all code compiles on a clean Linux environment.
 
-## Automated Build (GitHub Actions)
-
-The repository includes a GitHub Actions workflow (`.github/workflows/build.yml`) that automatically:
-- Builds WinuX on every push and pull request
-- Runs on Ubuntu with Qt5
-- Shows build status with ✅ or ❌ on PRs
-
-This ensures code quality and catches build-breaking changes automatically.
-
-## Build Requirements
+### Linux Build Requirements
 
 - Qt 5.x development libraries
 - qmake
 - C++ compiler (g++ or clang)
 - Linux environment (Ubuntu 20.04+ recommended)
 
-## Notes
+---
 
-The Codespaces/CI build is for compile-time validation only. Runtime testing requires Windows to test the actual bootable USB creation functionality.
+## Automated Build (GitHub Actions)
+
+The repository includes GitHub Actions workflows that automatically:
+
+| Workflow | Platform | Trigger |
+|----------|----------|---------|
+| `build.yml` | Linux (Ubuntu) | Every push and PR |
+| `windows-build.yml` | Windows | Push/PR to master |
+
+This ensures code quality and catches build-breaking changes automatically.
+
+---
+
+## Testing
+
+### Windows Testing
+
+After building on Windows, you can test the tool:
+
+1. Run `src\unetbootin\release\unetbootin.exe` as Administrator
+2. Select a Linux distribution ISO or disk image
+3. Choose target USB drive
+4. Create the bootable USB
+
+> **Note**: Creating bootable USB drives requires Administrator privileges.
+
+### Linux Testing
+
+The Linux build is primarily for compile-time validation. Full runtime testing of USB creation functionality requires Windows.
+
+---
+
+## Troubleshooting
+
+### Windows Issues
+
+| Issue | Solution |
+|-------|----------|
+| "vswhere.exe not found" | Install Visual Studio 2019/2022 with C++ tools |
+| "Python not found" | Install Python 3.x from python.org and add to PATH |
+| "Qt not found" | Run `test-build.ps1` without `-SkipQtInstall` |
+| Permission errors | Run PowerShell as Administrator |
+
+### Linux Issues
+
+| Issue | Solution |
+|-------|----------|
+| "qmake not found" | Install `qtbase5-dev` and `qt5-qmake` |
+| "uic not found" | Install `qttools5-dev-tools` |
+| Compiler errors | Ensure `build-essential` is installed |
