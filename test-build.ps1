@@ -212,9 +212,9 @@ function Invoke-Build {
         $env:PATH = "$QtDir\bin;$env:PATH"
         
         Write-Status "Configuring with qmake..."
-        # Set QMAKE_MSC_VER as an environment variable and call qmake in cmd.exe
-        # qmake requires QMAKE_MSC_VER to be set as an environment variable, not a command-line parameter
-        $qmakeCmd = "`"$VCVarsPath`" && set QMAKE_MSC_VER=$MSCVer && qmake CONFIG+=release unetbootin.pro"
+        # Set QMAKE_MSC_VER as both an environment variable and as a qmake variable
+        # This ensures qmake receives the value correctly in both contexts
+        $qmakeCmd = "`"$VCVarsPath`" && set QMAKE_MSC_VER=$MSCVer && qmake CONFIG+=release QMAKE_MSC_VER=%QMAKE_MSC_VER% unetbootin.pro"
         Write-Host "Running: qmake CONFIG+=release (with QMAKE_MSC_VER=$MSCVer)" -ForegroundColor Gray
         cmd.exe /c $qmakeCmd
         
