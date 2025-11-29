@@ -81,7 +81,8 @@ jobs:
             throw "VCVARS_PATH not set in environment."
           }
 
-          $cmd = "`"$vcvars`" && cl 2>&1"
+          # Use 'call' so the batch file returns control and allows running 'cl' in the same cmd session
+          $cmd = "call `"$vcvars`" && cl 2>&1"
           $output = cmd.exe /c $cmd
 
           $match = $output | Select-String -Pattern 'Microsoft.*?Version\s+(\d+)\.(\d+)'
@@ -107,7 +108,7 @@ jobs:
         run: |
           echo Using QMAKE_MSC_VER=%QMAKE_MSC_VER%
           call "%VCVARS_PATH%"
-          qmake CONFIG+=release unetbootin.pro
+          qmake CONFIG+=release QMAKE_MSC_VER=%QMAKE_MSC_VER% unetbootin.pro
 
       - name: Build with nmake
         shell: cmd
