@@ -18,7 +18,7 @@ on:
 
 jobs:
   build:
-    runs-on: windows-latest
+    runs-on: windows-2019
     timeout-minutes: 60
 
     steps:
@@ -27,7 +27,8 @@ jobs:
         with:
           submodules: true
 
-      # We rely on the preinstalled Visual Studio on windows-latest.
+      # We rely on the preinstalled Visual Studio on windows-2019.
+      # Using windows-2019 to ensure compatibility with Qt 5.15.2 MSVC 2019 build.
       # If MSVC is ever missing, we can re-enable a choco install here.
 
       - name: Set up MSVC developer command prompt
